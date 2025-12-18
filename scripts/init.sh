@@ -78,3 +78,24 @@ else
   echo "Lambda-Funktion $FUNCTION_NAME erstellt."
 fi
 echo
+
+echo "=== Adding permission for S3 to invoke Lambda ==="
+
+STATEMENT_ID="${PREFIX}-s3invoke"
+
+aws lambda add-permission \
+  --function-name "$FUNCTION_NAME" \
+  --statement-id "$STATEMENT_ID" \
+  --action "lambda:InvokeFunction" \
+  --principal s3.amazonaws.com \
+  --source-arn "arn:aws:s3:::$IN_BUCKET" \
+  --region "$REGION" 2>/tmp/add-perm.err || {
+    if grep -q "ResourceConflictException" /tmp/add-perm.err; then
+      echo "Permission existiert bereits, überspringe."
+    else
+      cat /tmp/add-perm.err
+      exit 1
+    fi
+  }
+
+echo
