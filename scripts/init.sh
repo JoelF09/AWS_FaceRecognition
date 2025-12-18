@@ -44,3 +44,25 @@ if [ ! -f "lambda.zip" ]; then
   echo "  zip ../lambda.zip lambda_function.py"
   exit 1
 fi
+
+create_bucket () {
+  local BUCKET_NAME="$1"
+
+  if aws s3api head-bucket --bucket "$BUCKET_NAME" >/dev/null 2>&1; then
+    echo "Bucket $BUCKET_NAME existiert bereits, überspringe."
+    return
+  fi
+
+  echo "Erstelle Bucket: $BUCKET_NAME"
+
+  if [ "$REGION" = "us-east-1" ]; then
+    aws s3api create-bucket \
+      --bucket "$BUCKET_NAME" \
+      --region "$REGION"
+  else
+    aws s3api create-bucket \
+      --bucket "$BUCKET_NAME" \
+      --region "$REGION" \
+      --create-bucket-configuration LocationConstraint="$REGION"
+  fi
+}
