@@ -71,3 +71,10 @@ echo "=== Creating S3 buckets ==="
 create_bucket "$IN_BUCKET"
 create_bucket "$OUT_BUCKET"
 echo
+
+echo "=== Using existing IAM role ==="
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/${ROLE_NAME}"
+echo "Account ID: $ACCOUNT_ID"
+echo "Role ARN:   $ROLE_ARN"
+echo
