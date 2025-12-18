@@ -27,3 +27,12 @@ fi
 
 ROLE_NAME="LabRole"       
 STATEMENT_ID="${FUNCTION_NAME}-s3invoke"
+
+echo
+echo "=== Konfiguration ==="
+echo "IN-Bucket:        $IN_BUCKET"
+echo "OUT-Bucket:       $OUT_BUCKET"
+echo "Region:           $REGION"
+echo "IAM-Rolle:        $ROLE_NAME"
+echo "Lambda-Funktion:  $FUNCTION_NAME"
+echo
