@@ -59,3 +59,22 @@ ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/${ROLE_NAME}"
 echo "Account ID: $ACCOUNT_ID"
 echo "Role ARN:   $ROLE_ARN"
 echo
+
+echo "=== Creating Lambda function ==="
+
+if aws lambda get-function --function-name "$FUNCTION_NAME" --region "$REGION" >/dev/null 2>&1; then
+  echo "Lambda-Funktion $FUNCTION_NAME existiert bereits, überspringe create-function."
+else
+  aws lambda create-function \
+    --function-name "$FUNCTION_NAME" \
+    --runtime python3.12 \
+    --role "$ROLE_ARN" \
+    --handler lambda_function.lambda_handler \
+    --zip-file fileb://lambda.zip \
+    --environment "Variables={OUT_BUCKET=$OUT_BUCKET}" \
+    --timeout 30 \
+    --memory-size 256 \
+    --region "$REGION"
+  echo "Lambda-Funktion $FUNCTION_NAME erstellt."
+fi
+echo
