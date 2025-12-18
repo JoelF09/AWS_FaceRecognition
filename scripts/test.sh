@@ -10,3 +10,6 @@ OUT_BUCKET="${PREFIX}-out"
 TEST_IMAGE="testdata/angelina.png"  
 KEY=$(basename "$TEST_IMAGE")
 OUT_KEY="${KEY}.json"
+
+echo "=== Uploading test image ==="
+aws s3 cp "$TEST_IMAGE" "s3://$IN_BUCKET/$KEY" --region "$REGION"
