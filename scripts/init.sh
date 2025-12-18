@@ -66,3 +66,8 @@ create_bucket () {
       --create-bucket-configuration LocationConstraint="$REGION"
   fi
 }
+
+echo "=== Creating S3 buckets ==="
+create_bucket "$IN_BUCKET"
+create_bucket "$OUT_BUCKET"
+echo
