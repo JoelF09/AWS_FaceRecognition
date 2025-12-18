@@ -36,3 +36,11 @@ echo "Region:           $REGION"
 echo "IAM-Rolle:        $ROLE_NAME"
 echo "Lambda-Funktion:  $FUNCTION_NAME"
 echo
+
+if [ ! -f "lambda.zip" ]; then
+  echo "ERROR: lambda.zip nicht gefunden. Bitte im Projekt-Hauptordner ausführen und vorher die Lambda-Funktion zippen."
+  echo "Beispiel:"
+  echo "  cd lambda"
+  echo "  zip ../lambda.zip lambda_function.py"
+  exit 1
+fi
