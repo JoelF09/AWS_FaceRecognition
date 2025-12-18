@@ -99,3 +99,27 @@ aws lambda add-permission \
   }
 
 echo
+
+echo "=== Configuring S3 event notification ==="
+
+cat > /tmp/notification.json <<EOF
+{
+  "LambdaFunctionConfigurations": [
+    {
+      "LambdaFunctionArn": "arn:aws:lambda:${REGION}:${ACCOUNT_ID}:function:${FUNCTION_NAME}",
+      "Events": ["s3:ObjectCreated:*"]
+    }
+  ]
+}
+EOF
+
+aws s3api put-bucket-notification-configuration \
+  --bucket "$IN_BUCKET" \
+  --notification-configuration file:///tmp/notification.json \
+  --region "$REGION"
+
+echo
+echo "=== Init finished ==="
+echo "In-Bucket:  $IN_BUCKET"
+echo "Out-Bucket: $OUT_BUCKET"
+echo "Lambda:     $FUNCTION_NAME"
