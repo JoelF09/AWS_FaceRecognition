@@ -78,3 +78,48 @@ if [ ! -f out.json ]; then
 
 fi
  
+echo "=== Recognized celebrities (detailliert) ==="
+
+if command -v jq >/dev/null 2>&1; then
+
+  jq '{
+
+    recognized_count: (.CelebrityFaces | length),
+
+    unrecognized_count: (.UnrecognizedFaces | length),
+
+    celebrities: [
+
+      .CelebrityFaces[] |
+
+      {
+
+        name: .Name,
+
+        id: .Id,
+
+        match_confidence: .MatchConfidence,
+
+        known_gender: .KnownGender.Type,
+
+        urls: .Urls,
+
+        face_confidence: .Face.Confidence,
+
+        bounding_box: .Face.BoundingBox
+
+      }
+
+    ]
+
+  }' out.json
+
+else
+
+  echo "Install jq für schönere Ausgabe. Raw JSON:"
+
+  cat out.json
+
+fi
+ $
+ 
