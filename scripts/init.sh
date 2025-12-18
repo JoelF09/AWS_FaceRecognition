@@ -2,21 +2,40 @@
 set -e
 export AWS_PAGER=""
 
-PREFIX="m346"                 
-REGION="us-east-1"            
+echo "===== AWS FaceRecognition – Init ====="
 
-IN_BUCKET="${PREFIX}-in"
-OUT_BUCKET="${PREFIX}-out"
-ROLE_NAME="LabRole"          
-FUNCTION_NAME="${PREFIX}-facerecognition"
+read -p "Name für IN-Bucket (z.B. m346inbucket): " IN_BUCKET
+if [ -z "$IN_BUCKET" ]; then
+  echo "Fehler: IN-Bucket-Name darf nicht leer sein."
+  exit 1
+fi
 
-echo "=== Using prefix: $PREFIX ==="
-echo "Region:   $REGION"
-echo "In-Bucket:  $IN_BUCKET"
-echo "Out-Bucket: $OUT_BUCKET"
-echo "Role:     $ROLE_NAME"
-echo "Function: $FUNCTION_NAME"
-echo "=============================="
+read -p "Name für OUT-Bucket (z.B. m346-joel-out): " OUT_BUCKET
+if [ -z "$OUT_BUCKET" ]; then
+  echo "Fehler: OUT-Bucket-Name darf nicht leer sein."
+  exit 1
+fi
+
+read -p "AWS Region (Enter für us-east-1): " REGION
+REGION=${REGION:-us-east-1}
+
+read -p "Name für Lambda-Funktion: " FUNCTION_NAME
+if [ -z "$FUNCTION_NAME" ]; then
+    echo "Fehler: Lambda-Funktionsname darf nicht leer sein."
+    exit 1
+fi
+
+ROLE_NAME="LabRole"       
+STATEMENT_ID="${FUNCTION_NAME}-s3invoke"
+
+echo
+echo "=== Konfiguration ==="
+echo "IN-Bucket:        $IN_BUCKET"
+echo "OUT-Bucket:       $OUT_BUCKET"
+echo "Region:           $REGION"
+echo "IAM-Rolle:        $ROLE_NAME"
+echo "Lambda-Funktion:  $FUNCTION_NAME"
+echo
 
 if [ ! -f "lambda.zip" ]; then
   echo "ERROR: lambda.zip nicht gefunden. Bitte im Projekt-Hauptordner ausführen und vorher die Lambda-Funktion zippen."
@@ -81,8 +100,6 @@ echo
 
 echo "=== Adding permission for S3 to invoke Lambda ==="
 
-STATEMENT_ID="${PREFIX}-s3invoke"
-
 aws lambda add-permission \
   --function-name "$FUNCTION_NAME" \
   --statement-id "$STATEMENT_ID" \
@@ -93,6 +110,7 @@ aws lambda add-permission \
     if grep -q "ResourceConflictException" /tmp/add-perm.err; then
       echo "Permission existiert bereits, überspringe."
     else
+      echo "Fehler bei add-permission:"
       cat /tmp/add-perm.err
       exit 1
     fi
@@ -120,6 +138,7 @@ aws s3api put-bucket-notification-configuration \
 
 echo
 echo "=== Init finished ==="
-echo "In-Bucket:  $IN_BUCKET"
-echo "Out-Bucket: $OUT_BUCKET"
-echo "Lambda:     $FUNCTION_NAME"
+echo "IN-Bucket:       $IN_BUCKET"
+echo "OUT-Bucket:      $OUT_BUCKET"
+echo "Lambda:          $FUNCTION_NAME"
+echo "Region:          $REGION"
