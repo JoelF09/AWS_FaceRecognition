@@ -137,3 +137,8 @@ aws s3api put-bucket-notification-configuration \
   --region "$REGION"
 
 echo
+echo "=== Init finished ==="
+echo "IN-Bucket:       $IN_BUCKET"
+echo "OUT-Bucket:      $OUT_BUCKET"
+echo "Lambda:          $FUNCTION_NAME"
+echo "Region:          $REGION"
