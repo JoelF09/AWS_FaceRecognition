@@ -8,10 +8,10 @@ Die Projektarbeit wurde in einer Dreiergruppe durchgeführt. Die Zusammenarbeit 
 ## Aufgabenteilung im Projektteam
 
 Béla Lüchinger  
-Verantwortlich für die Projektdokumentation. Dazu gehörten die Strukturierung der Markdown Dateien, die Beschreibung des Cloud Services, die Aufbereitung der Testergebnisse sowie die Reflexion und das Testing des Scripts. 
+Verantwortlich für die Projektdokumentation. Dazu gehörten die Strukturierung der Markdown Dateien, die Beschreibung des Cloud Services sowie die Reflexion der Scripte. 
 
 Joel Felix  
-Verantwortlich für die Projektstruktur und das Init Script. Er übernahm die automatisierte Erstellung und Konfiguration der AWS Ressourcen. Sowie die übersicht über das Reposetory.
+Verantwortlich für die Projektstruktur und das Init Script. Er übernahm die automatisierte Erstellung und Konfiguration der AWS Ressourcen und die übersicht über das Repository sowie die Aufbereitung der Testergebnisse und das Testing der Scripte.
 
 Joelle Sezer  
 Verantwortlich für den Lambda Function Code sowie das Test Script. Sie implementierte die Gesichtserkennung mit AWS Rekognition und das automatisierte Testverfahren.
