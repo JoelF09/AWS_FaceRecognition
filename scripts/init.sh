@@ -1,0 +1,178 @@
+#!/usr/bin/env bash
+set -e
+export AWS_PAGER=""
+
+# Abbruch bei Fehlern und Deaktivierung des AWS CLI Pagers
+# Dadurch stoppt das Skript sofort bei einem Fehler
+# und AWS CLI Ausgaben werden direkt im Terminal angezeigt
+
+echo "===== AWS FaceRecognition – Init ====="
+
+# Abfrage des Eingabe Buckets
+
+read -p "Name für IN-Bucket (z.B. m346inbucket): " IN_BUCKET
+if [ -z "$IN_BUCKET" ]; then
+  echo "Fehler: IN-Bucket-Name darf nicht leer sein."
+  exit 1
+fi
+
+# Abfrage des Ausgabe Buckets
+
+read -p "Name für OUT-Bucket (z.B. m346-joel-out): " OUT_BUCKET
+if [ -z "$OUT_BUCKET" ]; then
+  echo "Fehler: OUT-Bucket-Name darf nicht leer sein."
+  exit 1
+fi
+
+# Abfrage der AWS Region mit Defaultwert
+
+read -p "AWS Region (Enter für us-east-1): " REGION
+REGION=${REGION:-us-east-1}
+
+# Abfrage des Lambda Funktionsnamens
+
+read -p "Name für Lambda-Funktion: " FUNCTION_NAME
+if [ -z "$FUNCTION_NAME" ]; then
+    echo "Fehler: Lambda-Funktionsname darf nicht leer sein."
+    exit 1
+fi
+
+# Feste IAM Rolle und eindeutige Statement ID
+
+ROLE_NAME="LabRole"       
+STATEMENT_ID="${FUNCTION_NAME}-s3invoke"
+
+# Ausgabe der Konfiguration
+
+echo
+echo "=== Konfiguration ==="
+echo "IN-Bucket:        $IN_BUCKET"
+echo "OUT-Bucket:       $OUT_BUCKET"
+echo "Region:           $REGION"
+echo "IAM-Rolle:        $ROLE_NAME"
+echo "Lambda-Funktion:  $FUNCTION_NAME"
+echo
+
+# Prüfung ob das Lambda ZIP vorhanden ist
+
+if [ ! -f "lambda.zip" ]; then
+  echo "ERROR: lambda.zip nicht gefunden. Bitte im Projekt-Hauptordner ausführen und vorher die Lambda-Funktion zippen."
+  echo "Beispiel:"
+  echo "  cd lambda"
+  echo "  zip ../lambda.zip lambda_function.py"
+  exit 1
+fi
+
+# Funktion zum Erstellen eines S3 Buckets
+
+create_bucket () {
+  local BUCKET_NAME="$1"
+
+# Prüft ob der Bucket bereits existiert
+
+  if aws s3api head-bucket --bucket "$BUCKET_NAME" >/dev/null 2>&1; then
+    echo "Bucket $BUCKET_NAME existiert bereits, überspringe."
+    return
+  fi
+
+  echo "Erstelle Bucket: $BUCKET_NAME"
+
+  # Spezielle Behandlung für us-east-1
+
+  if [ "$REGION" = "us-east-1" ]; then
+    aws s3api create-bucket \
+      --bucket "$BUCKET_NAME" \
+      --region "$REGION"
+  else
+    aws s3api create-bucket \
+      --bucket "$BUCKET_NAME" \
+      --region "$REGION" \
+      --create-bucket-configuration LocationConstraint="$REGION"
+  fi
+}
+
+# Erstellung der Buckets
+
+echo "=== Creating S3 buckets ==="
+create_bucket "$IN_BUCKET"
+create_bucket "$OUT_BUCKET"
+echo
+
+# Ermittlung der AWS Account ID und IAM Rollen ARN
+
+echo "=== Using existing IAM role ==="
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/${ROLE_NAME}"
+echo "Account ID: $ACCOUNT_ID"
+echo "Role ARN:   $ROLE_ARN"
+echo
+
+# Erstellung der Lambda Funktion
+
+echo "=== Creating Lambda function ==="
+
+if aws lambda get-function --function-name "$FUNCTION_NAME" --region "$REGION" >/dev/null 2>&1; then
+  echo "Lambda-Funktion $FUNCTION_NAME existiert bereits, überspringe create-function."
+else
+  aws lambda create-function \
+    --function-name "$FUNCTION_NAME" \
+    --runtime python3.12 \
+    --role "$ROLE_ARN" \
+    --handler lambda_function.lambda_handler \
+    --zip-file fileb://lambda.zip \
+    --environment "Variables={OUT_BUCKET=$OUT_BUCKET}" \
+    --timeout 30 \
+    --memory-size 256 \
+    --region "$REGION"
+  echo "Lambda-Funktion $FUNCTION_NAME erstellt."
+fi
+echo
+
+# Erlaubnis für S3 zum Aufruf der Lambda Funktion
+
+echo "=== Adding permission for S3 to invoke Lambda ==="
+
+aws lambda add-permission \
+  --function-name "$FUNCTION_NAME" \
+  --statement-id "$STATEMENT_ID" \
+  --action "lambda:InvokeFunction" \
+  --principal s3.amazonaws.com \
+  --source-arn "arn:aws:s3:::$IN_BUCKET" \
+  --region "$REGION" 2>/tmp/add-perm.err || {
+    if grep -q "ResourceConflictException" /tmp/add-perm.err; then
+      echo "Permission existiert bereits, überspringe."
+    else
+      echo "Fehler bei add-permission:"
+      cat /tmp/add-perm.err
+      exit 1
+    fi
+  }
+
+echo
+
+# Konfiguration des S3 Event Triggers
+
+echo "=== Configuring S3 event notification ==="
+
+cat > /tmp/notification.json <<EOF
+{
+  "LambdaFunctionConfigurations": [
+    {
+      "LambdaFunctionArn": "arn:aws:lambda:${REGION}:${ACCOUNT_ID}:function:${FUNCTION_NAME}",
+      "Events": ["s3:ObjectCreated:*"]
+    }
+  ]
+}
+EOF
+
+aws s3api put-bucket-notification-configuration \
+  --bucket "$IN_BUCKET" \
+  --notification-configuration file:///tmp/notification.json \
+  --region "$REGION"
+
+echo
+echo "=== Init finished ==="
+echo "IN-Bucket:       $IN_BUCKET"
+echo "OUT-Bucket:      $OUT_BUCKET"
+echo "Lambda:          $FUNCTION_NAME"
+echo "Region:          $REGION"
