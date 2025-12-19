@@ -121,5 +121,3 @@ else
   cat out.json
 
 fi
- $
- 
