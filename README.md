@@ -91,6 +91,6 @@ Ein Testskript vereinfacht das Testen der Einrichtung. Das Skript lädt ein Beis
 └── README.md               # Dieses README.md File
 ```
  
-## Lizenz
+## ⚖️ Lizenz
  
 Dieses Projekt unterliegt der MIT-Lizenz. Weitere Informationen findest du in der Datei [LICENSE](LICENSE).
