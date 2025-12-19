@@ -2,7 +2,13 @@
 set -e
 export AWS_PAGER=""
 
+# Abbruch bei Fehlern und Deaktivierung des AWS CLI Pagers
+# Dadurch stoppt das Skript sofort bei einem Fehler
+# und AWS CLI Ausgaben werden direkt im Terminal angezeigt
+
 echo "===== AWS FaceRecognition – Init ====="
+
+# Abfrage des Eingabe Buckets
 
 read -p "Name für IN-Bucket (z.B. m346inbucket): " IN_BUCKET
 if [ -z "$IN_BUCKET" ]; then
@@ -10,14 +16,20 @@ if [ -z "$IN_BUCKET" ]; then
   exit 1
 fi
 
+# Abfrage des Ausgabe Buckets
+
 read -p "Name für OUT-Bucket (z.B. m346-joel-out): " OUT_BUCKET
 if [ -z "$OUT_BUCKET" ]; then
   echo "Fehler: OUT-Bucket-Name darf nicht leer sein."
   exit 1
 fi
 
+# Abfrage der AWS Region mit Defaultwert
+
 read -p "AWS Region (Enter für us-east-1): " REGION
 REGION=${REGION:-us-east-1}
+
+# Abfrage des Lambda Funktionsnamens
 
 read -p "Name für Lambda-Funktion: " FUNCTION_NAME
 if [ -z "$FUNCTION_NAME" ]; then
@@ -25,8 +37,12 @@ if [ -z "$FUNCTION_NAME" ]; then
     exit 1
 fi
 
+# Feste IAM Rolle und eindeutige Statement ID
+
 ROLE_NAME="LabRole"       
 STATEMENT_ID="${FUNCTION_NAME}-s3invoke"
+
+# Ausgabe der Konfiguration
 
 echo
 echo "=== Konfiguration ==="
@@ -37,6 +53,8 @@ echo "IAM-Rolle:        $ROLE_NAME"
 echo "Lambda-Funktion:  $FUNCTION_NAME"
 echo
 
+# Prüfung ob das Lambda ZIP vorhanden ist
+
 if [ ! -f "lambda.zip" ]; then
   echo "ERROR: lambda.zip nicht gefunden. Bitte im Projekt-Hauptordner ausführen und vorher die Lambda-Funktion zippen."
   echo "Beispiel:"
@@ -45,8 +63,12 @@ if [ ! -f "lambda.zip" ]; then
   exit 1
 fi
 
+# Funktion zum Erstellen eines S3 Buckets
+
 create_bucket () {
   local BUCKET_NAME="$1"
+
+# Prüft ob der Bucket bereits existiert
 
   if aws s3api head-bucket --bucket "$BUCKET_NAME" >/dev/null 2>&1; then
     echo "Bucket $BUCKET_NAME existiert bereits, überspringe."
@@ -54,6 +76,8 @@ create_bucket () {
   fi
 
   echo "Erstelle Bucket: $BUCKET_NAME"
+
+  # Spezielle Behandlung für us-east-1
 
   if [ "$REGION" = "us-east-1" ]; then
     aws s3api create-bucket \
@@ -67,10 +91,14 @@ create_bucket () {
   fi
 }
 
+# Erstellung der Buckets
+
 echo "=== Creating S3 buckets ==="
 create_bucket "$IN_BUCKET"
 create_bucket "$OUT_BUCKET"
 echo
+
+# Ermittlung der AWS Account ID und IAM Rollen ARN
 
 echo "=== Using existing IAM role ==="
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
@@ -78,6 +106,8 @@ ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/${ROLE_NAME}"
 echo "Account ID: $ACCOUNT_ID"
 echo "Role ARN:   $ROLE_ARN"
 echo
+
+# Erstellung der Lambda Funktion
 
 echo "=== Creating Lambda function ==="
 
@@ -98,6 +128,8 @@ else
 fi
 echo
 
+# Erlaubnis für S3 zum Aufruf der Lambda Funktion
+
 echo "=== Adding permission for S3 to invoke Lambda ==="
 
 aws lambda add-permission \
@@ -117,6 +149,8 @@ aws lambda add-permission \
   }
 
 echo
+
+# Konfiguration des S3 Event Triggers
 
 echo "=== Configuring S3 event notification ==="
 
