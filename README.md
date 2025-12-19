@@ -27,7 +27,7 @@ Die Anwendung folgt einer einfachen, ereignisgesteuerten (Event-driven) serverlo
 ### Voraussetzungen
  
 -   AWS CLI installiert und mit `aws configure` [konfiguriert](https://docs.aws.amazon.com).
--   Eine Unix-ähnliche ShellUmgebung (z.B Linux, maxOS oder WSL unter Windows) zum Ausführen von Shell-Skripten.
+-   Eine Unix-ähnliche Shell Umgebung (z.B Linux, maxOS oder WSL unter Windows) zum Ausführen von Shell-Skripten.
  
 ### Installation
  
