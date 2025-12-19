@@ -1,8 +1,5 @@
 # AWS Face Recognition
 [![Ask DeepWiki](https://devin.ai/assets/askdeepwiki.png)](https://deepwiki.com/JoelF09/AWS_FaceRecognition)
-![AWS](img.shields.io)
-![Python](img.shields.io)
-![License](img.shields.io)
  
 Dieses Repository enthält eine serverlose Anwendung zur Gesichsterkennung in Bildern unter Verwendung von Amazon Web Services (AWS). Das Projekt nutzt **AWS** **Lambda** und **Amazon Rekognition**, um Bilder, dir in einen S3-Bucket hochgeladen werden, automatisch zu analysieren.
  
